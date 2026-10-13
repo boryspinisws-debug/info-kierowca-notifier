@@ -1127,6 +1127,8 @@ function toggleFirstBooking() {
     selectedIds.clear();
     if (KNOWN_IDS.has(44)) selectedIds.add(44);
     renderSelected();
+    setCategory(5);
+    examGroup.querySelectorAll('.pill').forEach((p) => p.classList.toggle('on', p.dataset.val === 'Practice'));
   }
   setSwitch(firstBookingSwitch, turningOn);
   applyFirstBookingMode();
