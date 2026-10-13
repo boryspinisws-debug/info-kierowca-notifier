@@ -1,0 +1,29 @@
+name: First booking tests
+
+on:
+  pull_request:
+    paths:
+      - "src/info_kierowca_notifier/booking/first_booking.py"
+      - "src/info_kierowca_notifier/notifier.py"
+      - "src/info_kierowca_notifier/app.py"
+      - "src/info_kierowca_notifier/web/templates.py"
+      - "tests/test_first_booking.py"
+  push:
+    branches:
+      - "feat/first-exam-booking"
+
+permissions:
+  contents: read
+
+jobs:
+  first-booking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --dev
+      - run: uv run python -m unittest discover -s tests -p "test_first_booking.py" -v
+      - run: uv run python -m pyflakes src/info_kierowca_notifier/booking/first_booking.py src/info_kierowca_notifier/notifier.py src/info_kierowca_notifier/app.py tests/test_first_booking.py
