@@ -113,3 +113,5 @@ MIT — zobacz [LICENSE](LICENSE).
 ## Eksperymentalna pierwsza rezerwacja
 
 Opcjonalny tryb pierwszej rezerwacji może wysłać jedno żądanie dla egzaminu praktycznego kat. B na Toyocie w WORD Częstochowa. Płatność pozostaje ręczna. Jeśli odpowiedź serwera jest niejednoznaczna, aplikacja nie ponawia żądania i wymaga ręcznego sprawdzenia konta WORD.
+
+Po takim komunikacie najpierw sprawdź rezerwacje na koncie WORD. Dopiero gdy potwierdzisz, że żadna rezerwacja nie powstała, możesz zamknąć aplikację i usunąć plik stanu `%USERPROFILE%\\.local\\state\\info-kierowca-notifier\\first-booking-attempt.json`, aby odblokować kolejną próbę. Nie usuwaj go, jeśli status rezerwacji jest niepewny.
