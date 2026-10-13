@@ -734,10 +734,18 @@ WIZARD_PAGE = """<!doctype html>
 
     <fieldset>
       <legend>Alerts</legend>
+      <div class="toggle-row" style="margin-bottom:1rem;">
+        <div class="toggle-text">
+          <div class="tt-title">First booking mode (category B, Toyota)</div>
+          <div class="tt-sub">Automatically reserve the first matching practical slot at WORD Częstochowa. Payment remains manual.</div>
+        </div>
+        <div class="switch" id="first_booking_enabled" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
       <div class="booking-note" id="booking-note" role="note">
-        <span class="booking-note-text">Before continuing, you need an existing booked exam. This app changes the date of that booking; it does not create a new booking.</span>
+        <span class="booking-note-text" id="booking-note-text">Before continuing, you need an existing booked exam. This app changes the date of that booking; it does not create a new booking.</span>
         <button type="button" class="booking-note-dismiss" id="dismiss-booking-note" aria-label="Dismiss booking prerequisite message">Got it</button>
       </div>
+      <div id="existing-booking-fields">
       <label for="current_slot_date_display">Required: date of the booking to reschedule</label>
       <div class="datepick" id="datepick">
         <input type="text" class="datepick-input" id="current_slot_date_display" placeholder="Select a date" readonly required>
@@ -745,6 +753,7 @@ WIZARD_PAGE = """<!doctype html>
         <div class="calendar" id="calendar"></div>
       </div>
       <div class="hint">Enter the date of the existing booking that you want the app to reschedule.</div>
+      </div>
 
       <label for="search_start_date_display" style="margin-top:1rem;">Earliest acceptable exam date (optional)</label>
       <div class="datepick" id="search-start-datepick">
@@ -1098,6 +1107,34 @@ function wireSwitch(el, onChange) {
   el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
 }
 function switchOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+const firstBookingSwitch = document.getElementById('first_booking_enabled');
+function applyFirstBookingMode() {
+  const enabled = firstBookingSwitch.classList.contains('on');
+  document.getElementById('existing-booking-fields').style.display = enabled ? 'none' : '';
+  document.getElementById('booking-note-text').textContent = enabled
+    ? 'First booking mode is active. Select only WORD Częstochowa; the app will reserve a matching Toyota practical slot and then ask you to pay manually.'
+    : 'Before continuing, you need an existing booked exam. This app changes the date of that booking; it does not create a new booking.';
+  document.getElementById('current_slot_date_display').required = !enabled;
+  updateSearchStartBound();
+}
+function toggleFirstBooking() {
+  const turningOn = !firstBookingSwitch.classList.contains('on');
+  if (turningOn && !confirm(t(
+    'Enable automatic first booking? The app may submit one real practical-exam reservation when a matching Toyota slot appears. Payment will not be made automatically.'
+  ))) return;
+  if (turningOn) {
+    selectedIds.clear();
+    if (KNOWN_IDS.has(44)) selectedIds.add(44);
+    renderSelected();
+  }
+  setSwitch(firstBookingSwitch, turningOn);
+  applyFirstBookingMode();
+}
+firstBookingSwitch.addEventListener('click', toggleFirstBooking);
+firstBookingSwitch.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleFirstBooking(); }
+});
 
 const phoneAlertsSwitch = document.getElementById('phone-alerts');
 const phoneAlertsReloginSwitch = document.getElementById('phone-alerts-relogin');
@@ -1482,6 +1519,7 @@ searchHorizonDate.setDate(searchHorizonDate.getDate() + 31);
 let sdpView = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
 let selectedSearchStartDate = null;
 function latestSearchStartDate() {
+  if (document.getElementById('first_booking_enabled').classList.contains('on')) return searchHorizonDate;
   if (!selectedDate) return null;
   const dayBeforeBooking = new Date(selectedDate);
   dayBeforeBooking.setDate(dayBeforeBooking.getDate() - 1);
@@ -1609,6 +1647,8 @@ if (EXISTING_CONFIG) {
   setSwitch(phoneAlertsReloginSwitch, EXISTING_CONFIG.phone_alerts_relogin !== false);
   setSwitch(document.getElementById('headless_pz_login'), EXISTING_CONFIG.headless_pz_login === true);
   setSwitch(document.getElementById('auto_open_browser'), EXISTING_CONFIG.auto_open_browser !== false);
+  setSwitch(firstBookingSwitch, EXISTING_CONFIG.first_booking_enabled === true);
+  applyFirstBookingMode();
   setSwitch(autoSelectSlotSwitch, EXISTING_CONFIG.auto_select_slot === true);
   setSwitch(autoConfirmSwitch, EXISTING_CONFIG.auto_confirm_reschedule === true);
   applyAutoConfirmDim();
@@ -1696,8 +1736,12 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     const category = selectedCategory;
     if (!category) throw new Error(t('Pick a license category.'));
 
+    const firstBookingEnabled = switchOn('first_booking_enabled');
     const currentSlotDate = dpValue.value;
-    if (!currentSlotDate) throw new Error(t('Pick the date of your current booked slot.'));
+    if (!firstBookingEnabled && !currentSlotDate) throw new Error(t('Pick the date of your current booked slot.'));
+    if (firstBookingEnabled && (orgIds.length !== 1 || orgIds[0] !== 44 || category !== 5 || !examTypes.includes('Practice'))) {
+      throw new Error(t('First booking requires only WORD Częstochowa, category B, and the practical exam type.'));
+    }
 
     const body = {
       login_method: loginMethodSelect.value,
@@ -1708,6 +1752,7 @@ document.getElementById('form').addEventListener('submit', async (e) => {
       category: category,
       exam_types: examTypes,
       current_slot_date: currentSlotDate,
+      first_booking_enabled: firstBookingEnabled,
       search_start_date: sdpValue.value,
       poll_interval_seconds: parseInt(document.getElementById('poll_interval_seconds').value, 10),
       earliest_slot_hour: parseInt(timeFromHidden.value, 10),
