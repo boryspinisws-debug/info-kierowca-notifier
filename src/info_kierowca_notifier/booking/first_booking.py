@@ -133,8 +133,10 @@ def try_first_booking(logger, config, session, results):
         return "disabled", "", None
 
     prior = _load_attempt()
-    if prior.get("state") in ("attempted", "needs_review", "reserved"):
-        return "blocked", "A previous first-booking attempt needs checking; no new request was sent.", prior.get("candidate")
+    if prior.get("state") == "reserved":
+        return "reserved", "A reservation was already verified. Complete payment manually; no new request was sent.", prior.get("candidate")
+    if prior.get("state") in ("attempted", "needs_review"):
+        return "needs_review", "A previous first-booking attempt needs checking; no new request was sent.", prior.get("candidate")
 
     candidate = _find_candidate(results, config)
     if not candidate:
