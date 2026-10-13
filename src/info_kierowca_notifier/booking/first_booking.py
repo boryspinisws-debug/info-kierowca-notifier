@@ -40,7 +40,7 @@ def _slot_id(exam):
     for key in ("practiceId", "practiceExamId", "examId"):
         value = exam.get(key)
         if value not in (None, ""):
-            return str(value)
+            return value
     return ""
 
 
@@ -141,7 +141,10 @@ def try_first_booking(logger, config, session, results):
     candidate = _find_candidate(results, config)
     if not candidate:
         return "no_candidate", "", None
-    if prior.get("state") == "rejected" and prior.get("candidate") == candidate:
+    prior_candidate = prior.get("candidate") or {}
+    if (prior.get("state") == "rejected"
+            and prior_candidate.get("slot_id") == candidate.get("slot_id")
+            and prior_candidate.get("datetime") == candidate.get("datetime")):
         return "rejected", "The same slot was already rejected by the site; no repeat request was sent.", candidate
 
     payload = {
