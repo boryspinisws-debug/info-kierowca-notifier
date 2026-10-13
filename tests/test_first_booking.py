@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from info_kierowca_notifier.booking import first_booking
 
@@ -45,7 +45,7 @@ class FirstBookingTests(unittest.TestCase):
                     (200, json.dumps({"reservation": {"status": "PlaceReserved"}}).encode(), {}),
                 ]) as request:
                     outcome, message, candidate = first_booking.try_first_booking(
-                        unittest.mock.Mock(), sample_config(), {"cookies": {}}, sample_results()
+                        Mock(), sample_config(), {"cookies": {}}, sample_results()
                     )
                     self.assertEqual(outcome, "reserved")
                     self.assertIn("manually", message)
