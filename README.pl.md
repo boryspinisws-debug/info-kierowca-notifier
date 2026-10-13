@@ -104,3 +104,8 @@ uruchamiane narzędzia utrzymaniowe w `tools/`, a płaski katalog `tests/` jest 
 ## Licencja
 
 MIT — zobacz [LICENSE](LICENSE).
+
+
+## Eksperymentalna pierwsza rezerwacja
+
+Opcjonalny tryb pierwszej rezerwacji może wysłać jedno żądanie dla egzaminu praktycznego kat. B na Toyocie w WORD Częstochowa. Płatność pozostaje ręczna. Jeśli odpowiedź serwera jest niejednoznaczna, aplikacja nie ponawia żądania i wymaga ręcznego sprawdzenia konta WORD.
