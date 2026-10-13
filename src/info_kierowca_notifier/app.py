@@ -234,16 +234,29 @@ def build_config(payload):
     if not (0 <= earliest_slot_hour < latest_slot_hour <= 24):
         raise ValueError("Preferred time window must be a valid range between 00:00 and 24:00")
 
-    current_slot_date = require_str("current_slot_date", "Current slot date")
+    first_booking_enabled = bool(payload.get("first_booking_enabled", False))
+    if first_booking_enabled:
+        if organization_ids != [44]:
+            raise ValueError("First booking mode requires selecting only WORD Częstochowa.")
+        if category != 5 or "Practice" not in exam_types:
+            raise ValueError("First booking mode requires category B and the practical exam type.")
+        raw_current_slot_date = payload.get("current_slot_date", "")
+        if raw_current_slot_date is not None and not isinstance(raw_current_slot_date, str):
+            raise ValueError("Current slot date must be a date like 2026-09-14")
+        current_slot_date = (raw_current_slot_date or "").strip()
+        parsed_current_slot = None
+    else:
+        current_slot_date = require_str("current_slot_date", "Current slot date")
     # Must be ISO: notifier.is_urgent() feeds this straight to
     # datetime.fromisoformat() on every check that finds a slot. An
     # unvalidated value (e.g. "05/12/2026") saved fine here, then raised
     # inside the poll loop where loop()'s except-Exception swallowed it —
     # freezing the dashboard on its last status with nothing to explain why.
-    try:
-        parsed_current_slot = datetime.fromisoformat(current_slot_date).date()
-    except ValueError:
-        raise ValueError("Current slot date must be a date like 2026-09-14")
+    if not first_booking_enabled:
+        try:
+            parsed_current_slot = datetime.fromisoformat(current_slot_date).date()
+        except ValueError:
+            raise ValueError("Current slot date must be a date like 2026-09-14")
 
     search_start = payload.get("search_start_date", "")
     if search_start not in (None, ""):
@@ -257,7 +270,7 @@ def build_config(payload):
         horizon = today + timedelta(days=notifier.MAX_DAYS_AHEAD)
         if not today <= parsed_search_start <= horizon:
             raise ValueError("Earliest acceptable exam date must be within the next 31 days")
-        if parsed_search_start >= parsed_current_slot:
+        if not first_booking_enabled and parsed_search_start >= parsed_current_slot:
             raise ValueError("Earliest acceptable exam date must be before the current booking date")
     else:
         search_start = ""
@@ -277,6 +290,7 @@ def build_config(payload):
         "exam_types": exam_types,
         "ntfy_topic": ntfy_topic,
         "current_slot_date": current_slot_date,
+        "first_booking_enabled": first_booking_enabled,
         "search_start_date": search_start,
         "poll_interval_seconds": poll_interval_seconds,
         "earliest_slot_hour": earliest_slot_hour,
@@ -300,7 +314,7 @@ def build_config(payload):
     # rather than trusting the wizard's own JS-side dependent-toggle dimming —
     # a payload built by hand or by stale JS shouldn't be able to persist that
     # combination.
-    auto_select_slot = bool(payload.get("auto_select_slot", False))
+    auto_select_slot = (not first_booking_enabled) and bool(payload.get("auto_select_slot", False))
     config["auto_select_slot"] = auto_select_slot
     config["auto_confirm_reschedule"] = auto_select_slot and bool(
         payload.get("auto_confirm_reschedule", False)
@@ -378,11 +392,12 @@ def reset_account_state(config, *, store=None, config_file=None,
 
 
 BOOKING_CONFIG_KEYS = {"organization_ids", "category", "profile_number", "exam_types",
-                       "ntfy_topic", "current_slot_date"}
+                       "ntfy_topic"}
 
 
 def config_is_complete(config):
-    return BOOKING_CONFIG_KEYS <= set(config)
+    return (BOOKING_CONFIG_KEYS <= set(config)
+            and (bool(config.get("current_slot_date")) or config.get("first_booking_enabled") is True))
 
 
 def pkk_category_id(category_code):

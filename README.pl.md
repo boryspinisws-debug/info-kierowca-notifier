@@ -41,8 +41,12 @@ dane i wyśle zmianę za Ciebie.
 3. Wybierz **Profil Zaufany** (zalecane), wpisz nazwę użytkownika i hasło oraz sparuj Google
    Messages Web zgodnie z instrukcją. Dzięki temu pierwsze logowanie i późniejsze odnawianie sesji
    przebiegają automatycznie. Logowanie kodem QR mObywatel pozostaje ręczną opcją zapasową.
-4. Potrzebujesz już zarezerwowanego egzaminu: aplikacja zmienia datę tej rezerwacji, a nie tworzy nowej. Przygotuj datę tej rezerwacji.
-5. Potwierdź wykryty numer PKK/kategorię prawa jazdy (lub wypełnij je ręcznie), wybierz ośrodek/ośrodki egzaminacyjne, **wpisz datę rezerwacji do zmiany terminu** i wybierz sposób powiadamiania.
+4. Potwierdź wykryty numer PKK/kategorię prawa jazdy (lub wypełnij je ręcznie), wybierz ośrodek i skonfiguruj powiadomienia.
+5. Przy zwykłym monitorowaniu lub zmianie terminu podaj datę istniejącej rezerwacji. W trybie
+   eksperymentalnej pierwszej rezerwacji włącz **First booking mode**; aplikacja ustawi WORD
+   Częstochowa, kategorię B i egzamin praktyczny. Ustaw najwcześniejszą akceptowalną datę.
+   Aplikacja nie płaci automatycznie. Przy niejednoznacznej odpowiedzi zatrzymuje się i wymaga
+   ręcznego sprawdzenia konta WORD, zamiast ponawiać żądanie.
 
 Od tej pory otwarta karta przeglądarki jest Twoim panelem; znajduje się w niej przycisk **Zakończ** do wyłączenia programu.
 
@@ -104,3 +108,10 @@ uruchamiane narzędzia utrzymaniowe w `tools/`, a płaski katalog `tests/` jest 
 ## Licencja
 
 MIT — zobacz [LICENSE](LICENSE).
+
+
+## Eksperymentalna pierwsza rezerwacja
+
+Opcjonalny tryb pierwszej rezerwacji może wysłać jedno żądanie dla egzaminu praktycznego kat. B na Toyocie w WORD Częstochowa. Płatność pozostaje ręczna. Jeśli odpowiedź serwera jest niejednoznaczna, aplikacja nie ponawia żądania i wymaga ręcznego sprawdzenia konta WORD.
+
+Po takim komunikacie najpierw sprawdź rezerwacje na koncie WORD. Dopiero gdy potwierdzisz, że żadna rezerwacja nie powstała, możesz zamknąć aplikację i usunąć plik stanu `%USERPROFILE%\\.local\\state\\info-kierowca-notifier\\first-booking-attempt.json`, aby odblokować kolejną próbę. Nie usuwaj go, jeśli status rezerwacji jest niepewny.
