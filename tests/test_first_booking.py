@@ -55,7 +55,7 @@ class FirstBookingTests(unittest.TestCase):
                     self.assertEqual(payload["category"], 5)
                     self.assertEqual(payload["examType"], "Practice")
                     self.assertEqual(payload["organizationId"], 44)
-                    self.assertEqual(payload["practiceExamId"], "98765")
+                    self.assertEqual(payload["practiceExamId"], 98765)
                     self.assertEqual(payload["profileNumber"], "TEST-PKK")
 
     def test_ambiguous_create_response_is_never_retried(self):
