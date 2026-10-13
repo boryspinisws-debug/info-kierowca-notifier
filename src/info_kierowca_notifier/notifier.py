@@ -22,6 +22,7 @@ from info_kierowca_notifier import client
 from info_kierowca_notifier.auth import launch as auth_launch
 from info_kierowca_notifier import ntfy_transport
 from info_kierowca_notifier.booking import launch as booking_launch
+from info_kierowca_notifier.booking import first_booking
 from info_kierowca_notifier import tls_transport
 from info_kierowca_notifier.paths import (  # noqa: F401  (re-exported: other modules read these off notifier)
     CONFIG_FILE,
@@ -453,8 +454,9 @@ def run_check(logger, dash_status):
         auth_launch.trigger_auto_refresh(logger, config)
         return
     required_config = {"organization_ids", "category", "profile_number", "exam_types",
-                       "ntfy_topic", "current_slot_date"}
-    if not required_config <= set(config):
+                       "ntfy_topic"}
+    if (not required_config <= set(config)
+            or (not config.get("current_slot_date") and not config.get("first_booking_enabled"))):
         logger.info("outcome=setup_incomplete detail=booking_config_incomplete")
         update_status(dash_status, "setup_incomplete", "Waiting for setup to be completed")
         return
@@ -560,6 +562,34 @@ def run_check(logger, dash_status):
 
     save_json(SESSION_FILE, session)
 
+    if config.get("first_booking_enabled"):
+        booking_outcome, booking_message, candidate = first_booking.try_first_booking(
+            logger, config, session, results
+        )
+        if booking_outcome in ("reserved", "needs_review", "blocked", "rejected"):
+            outcome = "first_booking_reserved" if booking_outcome == "reserved" else (
+                "first_booking_rejected" if booking_outcome == "rejected" else "first_booking_needs_review"
+            )
+            hits_for_status = []
+            if candidate:
+                hits_for_status = [{
+                    "word": candidate.get("center", "WORD Częstochowa"),
+                    "exam_type": "Practice",
+                    "datetime": candidate.get("datetime", ""),
+                    "places": candidate.get("places", 0),
+                }]
+            if dash_status.get("outcome") != outcome and config.get("phone_alerts", True):
+                title = "Exam reservation verified" if booking_outcome == "reserved" else (
+                    "Exam booking request rejected" if booking_outcome == "rejected" else "Check exam reservation manually"
+                )
+                push_ntfy(
+                    logger, config.get("ntfy_topic"), title,
+                    (candidate.get("datetime", "") + " · Toyota · " if candidate else "") + booking_message,
+                    priority="urgent",
+                )
+            update_status(dash_status, outcome, booking_message, hits_for_status)
+            return
+
     max_date = now + timedelta(days=MAX_DAYS_AHEAD)
     wanted_types = set(config["exam_types"])
     watch_ids = set(config["organization_ids"])
@@ -600,7 +630,10 @@ def run_check(logger, dash_status):
         logger.info("outcome=slot_found status=%s detail=%r", status, "; ".join(lines))
 
         fastest = fastest_of(hit_dicts)
-        urgent = is_urgent(datetime.fromisoformat(fastest["datetime"]), config)
+        urgent = (
+            False if config.get("first_booking_enabled")
+            else is_urgent(datetime.fromisoformat(fastest["datetime"]), config)
+        )
         if urgent:
             if push_signature(fastest) != dash_status.get("last_push_signature"):
                 if config.get("phone_alerts", True):
@@ -618,7 +651,8 @@ def run_check(logger, dash_status):
                     )
                     logger.info("outcome=push_sent detail=%r", fastest)
                 dash_status["last_push_signature"] = push_signature(fastest)
-                booking_launch.trigger_open_browser(logger, config, target_hit=fastest)
+                if not config.get("first_booking_enabled"):
+                    booking_launch.trigger_open_browser(logger, config, target_hit=fastest)
         else:
             dash_status["last_push_signature"] = None
 
