@@ -25,6 +25,7 @@ its details, and submits the change for you.
 - **Find the right slot:** monitor selected WORD centers, exam types, dates, and times.
 - **Get notified immediately:** see matches on the dashboard and receive optional phone alerts.
 - **Reschedule automatically:** let the app select, verify, and confirm an earlier matching slot.
+- **Experimental first booking:** optionally submit one category B practical reservation for a Toyota slot at WORD Częstochowa; the request is verified and payment stays manual.
 - **Keep control of your data:** credentials and session stay on your computer.
 - **Use it for free:** open source, MIT-licensed, and subscription-free.
 
@@ -45,10 +46,13 @@ its details, and submits the change for you.
 3. Choose **Profil Zaufany** (recommended), enter your username and password, and pair Google
    Messages Web when prompted. This lets the app complete both the initial login and later
    session renewals automatically. mObywatel QR login remains available as a manual fallback.
-4. You need an existing booked exam: this app changes the date of that booking; it does not
-   create a new booking. Have that booking's date ready.
-5. Confirm the PKK number/license category it found for you (or fill them in manually if you
-   skipped), pick your exam center(s), **enter the date of the booking to reschedule**, and choose how you want to be notified.
+4. Confirm the PKK number/license category it found for you (or fill them in manually if you
+   skipped), pick your exam center(s), and choose how you want to be notified.
+5. For normal monitoring/rescheduling, enter your existing booking date. For experimental first
+   booking, enable **First booking mode**, keep only **WORD Częstochowa**, choose category **B**,
+   include **Practice**, and set the earliest acceptable date. The app only submits one create
+   request at a time, verifies the returned reservation status, and never pays automatically.
+   If the server response is ambiguous, it stops and asks you to check the WORD account manually.
 
 That's it — from then on, that browser tab is your dashboard, with a **Quit** button whenever you
 want to shut it down.
