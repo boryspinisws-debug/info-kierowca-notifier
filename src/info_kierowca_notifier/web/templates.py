@@ -1116,6 +1116,11 @@ function applyFirstBookingMode() {
     ? 'First booking mode is active. Select only WORD Częstochowa; the app will reserve a matching Toyota practical slot and then ask you to pay manually.'
     : 'Before continuing, you need an existing booked exam. This app changes the date of that booking; it does not create a new booking.';
   document.getElementById('current_slot_date_display').required = !enabled;
+  if (enabled) {
+    setSwitch(document.getElementById('auto_select_slot'), false);
+    setSwitch(document.getElementById('auto_confirm_reschedule'), false);
+    applyAutoConfirmDim();
+  }
   updateSearchStartBound();
 }
 function toggleFirstBooking() {
