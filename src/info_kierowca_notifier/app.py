@@ -240,7 +240,10 @@ def build_config(payload):
             raise ValueError("First booking mode requires selecting only WORD Częstochowa.")
         if category != 5 or "Practice" not in exam_types:
             raise ValueError("First booking mode requires category B and the practical exam type.")
-        current_slot_date = (payload.get("current_slot_date") or "").strip()
+        raw_current_slot_date = payload.get("current_slot_date", "")
+        if raw_current_slot_date is not None and not isinstance(raw_current_slot_date, str):
+            raise ValueError("Current slot date must be a date like 2026-09-14")
+        current_slot_date = (raw_current_slot_date or "").strip()
         parsed_current_slot = None
     else:
         current_slot_date = require_str("current_slot_date", "Current slot date")
