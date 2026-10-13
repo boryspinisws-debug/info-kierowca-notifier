@@ -168,12 +168,16 @@ def try_first_booking(logger, config, session, results):
     status, body, _headers = client.do_request(
         f"{RESERVATIONS_URL}/create", session, method="POST", json_body=payload
     )
-    if status is None or status >= 500:
-        attempt["state"] = "needs_review"
-        attempt["reason"] = "ambiguous_create_response"
-        _save_attempt(attempt)
-        logger.warning("outcome=first_booking_needs_review stage=create status=%s", status)
-        return "needs_review", "Reservation request outcome is uncertain. Check the WORD account manually; no retry was sent.", candidate
+    if status is None or not (400 <= status < 500):
+        # Only a definitive client-error response is treated as a rejection.
+        # 202/204, redirects, 5xx, and transport failures may have committed
+        # the reservation, so they must block every further create attempt.
+        if status not in (400, 401, 403, 404, 409, 422, 429):
+            attempt["state"] = "needs_review"
+            attempt["reason"] = "ambiguous_create_response"
+            _save_attempt(attempt)
+            logger.warning("outcome=first_booking_needs_review stage=create status=%s", status)
+            return "needs_review", "Reservation request outcome is uncertain. Check the WORD account manually; no retry was sent.", candidate
     if status not in (200, 201):
         attempt["state"] = "rejected"
         attempt["reason"] = f"http_{status}"
