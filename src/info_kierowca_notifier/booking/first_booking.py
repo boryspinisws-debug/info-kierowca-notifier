@@ -141,6 +141,8 @@ def try_first_booking(logger, config, session, results):
     candidate = _find_candidate(results, config)
     if not candidate:
         return "no_candidate", "", None
+    if prior.get("state") == "rejected" and prior.get("candidate") == candidate:
+        return "rejected", "The same slot was already rejected by the site; no repeat request was sent.", candidate
 
     payload = {
         "profileNumber": config["profile_number"],
